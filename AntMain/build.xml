@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="AntMain" >
+
+    <!-- 去掉以下注释可以自动执行、不需选择，0-release版本，其他为debug版本 -->
+    <!-- <property
+        name="apk.level"
+        value="0" /> -->
+
+    <input
+        addproperty="apk.level"
+        message="请输入0或1(0-release, 1-debug):"
+        validargs="0,1" />
+
+    <property
+        name="sdk.dir"
+        value="{your android sdk path}" />
+
+    <property
+        name="apk.package"
+        value="com.tobenull.antmain" />
+
+    <property
+        name="apk.launcher"
+        value=".MainActivity" />
+
+    <condition
+        else="false"
+        property="apk.release"
+        value="true" >
+
+        <equals
+            arg1="${apk.level}"
+            arg2="0" />
+    </condition>
+
+    <condition
+        else="debug"
+        property="apk.distribution"
+        value="release" >
+
+        <equals
+            arg1="${apk.release}"
+            arg2="true" />
+    </condition>
+
+    <property
+        name="apk.suffix"
+        value=".apk" />
+
+    <tstamp>
+
+        <format
+            pattern="yyyyMMdd"
+            property="apk.date.stamp" />
+    </tstamp>
+
+    <property
+        name="target.dir"
+        value="./release/apk/${apk.distribution}/${apk.date.stamp}" />
+
+    <property
+        name="apk.unsigned"
+        value="unsigned" />
+
+    <property
+        name="apk.signed"
+        value="signed" />
+
+    <tstamp>
+
+        <format
+            pattern="yyyyMMdd_HHmmss.SSS"
+            property="apk.build.stamp" />
+    </tstamp>
+
+    <condition
+        else="${ant.project.name}-${apk.build.stamp}-${apk.distribution}${apk.suffix}"
+        property="apk.name"
+        value="${ant.project.name}-${apk.build.stamp}-${apk.distribution}-${apk.unsigned}${apk.suffix}" >
+
+        <equals
+            arg1="${apk.release}"
+            arg2="true" />
+    </condition>
+
+    <loadproperties srcFile="project.properties" />
+
+    <import file="${sdk.dir}/tools/ant/build.xml" />
+
+    <target name="main" >
+
+        <echo message="will to create ${apk.name} ..." />
+
+        <if>
+
+            <condition>
+
+                <istrue value="${apk.release}" />
+            </condition>
+
+            <then>
+
+                <antcall target="build-release" />
+            </then>
+
+            <else>
+
+                <antcall target="build-debug" />
+            </else>
+        </if>
+    </target>
+
+    <target
+        name="build-release"
+        depends="release" >
+
+        <echo message="ready to copy bin/${ant.project.name}-${apk.distribution}-${apk.unsigned}${apk.suffix} to ${target.dir}/${apk.name}..." />
+
+        <copy
+            file="./bin/${ant.project.name}-${apk.distribution}-${apk.unsigned}${apk.suffix}"
+            tofile="${target.dir}/${apk.name}" />
+    </target>
+
+    <target
+        name="build-debug"
+        depends="debug" >
+
+        <echo message="ready to bin/${ant.project.name}-${apk.distribution}${apk.suffix} apk to ${target.dir}/${apk.name} ..." />
+
+        <copy
+            file="./bin/${ant.project.name}-${apk.distribution}${apk.suffix}"
+            tofile="${target.dir}/${apk.name}" />
+
+        <antcall target="build-install" />
+    </target>
+
+    <target name="build-uninstall" >
+
+        <echo message="adb uninstall ${apk.package} ..." />
+
+        <exec
+            executable="${adb}"
+            failonerror="true" >
+
+            <arg value="uninstall" />
+
+            <arg value="${apk.package}" />
+        </exec>
+    </target>
+
+    <target name="build-install" >
+
+        <antcall target="build-uninstall" />
+
+        <echo message="adb install ${apk.name} ..." />
+
+        <exec
+            executable="${adb}"
+            failonerror="true" >
+
+            <arg value="install" />
+
+            <arg value="${target.dir}/${apk.name}" />
+        </exec>
+
+        <antcall target="build-start" />
+    </target>
+
+    <target name="build-start" >
+
+        <echo message="adb shell start ${apk.package}/${apk.launcher} ..." />
+
+        <exec
+            executable="${adb}"
+            failonerror="true" >
+
+            <arg value="shell" />
+
+            <arg value="am" />
+
+            <arg value="start" />
+
+            <arg value="${apk.package}/${apk.launcher}" />
+        </exec>
+    </target>
+
+</project>

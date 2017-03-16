@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="AntLibrary" >
+
+    <!-- 去掉以下注释可以自动执行、不需选择，0-release版本，其他为debug版本 -->
+    <!-- <property
+        name="jar.level"
+        value="1" /> -->
+
+    <input
+        addproperty="jar.level"
+        message="please select 0 or 1(0-release, 1-debug):"
+        validargs="0,1" />
+
+    <property
+        name="sdk.dir"
+        value="{your android sdk path}" />
+
+    <property
+        name="target.project.dir"
+        value="../AntMain" />
+
+    <condition
+        else="debug"
+        property="jar.distribution"
+        value="release" >
+
+        <equals
+            arg1="${jar.level}"
+            arg2="0" />
+    </condition>
+
+    <tstamp>
+
+        <format
+            pattern="yyyyMMdd"
+            property="jar.date.stamp" />
+    </tstamp>
+
+    <property
+        name="target.libs.dir"
+        value="${target.project.dir}/libs" />
+
+    <property
+        name="target.dist.dir"
+        value="${target.project.dir}/release/jar/${jar.distribution}/${jar.date.stamp}" />
+
+    <property
+        name="jar.suffix"
+        value=".jar" />
+
+    <tstamp>
+
+        <format
+            pattern="yyyyMMdd_HHmmss.SSS"
+            property="jar.stamp" />
+    </tstamp>
+
+    <property
+        name="build.time"
+        value="${jar.stamp}" />
+
+    <property
+        name="jar.name"
+        value="${ant.project.name}-${build.time}-${jar.distribution}${jar.suffix}" />
+
+    <loadproperties srcFile="project.properties" />
+
+    <import file="${sdk.dir}/tools/ant/build.xml" />
+
+    <target
+        name="main"
+        depends="release"
+        description="my target to build jar" >
+
+        <echo message="start ..." />
+
+        <mkdir dir="./tmp/release/assets" />
+
+        <copy todir="./tmp/release/assets" >
+
+            <fileset dir="./assets" />
+        </copy>
+
+        <jar destfile="${target.dist.dir}/${jar.name}" >
+
+            <zipfileset dir="./tmp/release" />
+
+            <zipfileset
+                excludes="META-INF/*.MF"
+                src="./bin/classes.jar" />
+        </jar>
+
+        <echo message="ready to replace the old lib ..." />
+
+        <delete>
+
+            <fileset
+                dir="${target.libs.dir}"
+                includes="${ant.project.name}*${jar.suffix}" />
+        </delete>
+
+        <copy
+            file="${target.dist.dir}/${jar.name}"
+            todir="${target.libs.dir}" />
+
+        <delete dir="./tmp" />
+
+        <echo message="finish." />
+    </target>
+
+</project>
